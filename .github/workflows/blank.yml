@@ -1,14 +1,15 @@
 name: Telegram Quit Smoking Reminder
 
 on:
-  schedule:
+  workflow_dispatch:
     # Times are in UTC.
     # 7,10,14,17,20 UTC ≈ 8,11,15,18,21 in Europe/Amsterdam
-    - cron: "0 7 * * *"
-    - cron: "0 10 * * *"
-    - cron: "0 14 * * *"
-    - cron: "0 17 * * *"
-    - cron: "0 20 * * *"
+    # - cron: "0 7 * * *"
+    # - cron: "0 10 * * *"
+    # - cron: "0 14 * * *"
+    # - cron: "0 17 * * *"
+    # - cron: "0 20 * * *"
+    
 
 jobs:
   send-message:
