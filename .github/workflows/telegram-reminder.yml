@@ -1,4 +1,4 @@
-name: Telegram Quit Smoking Reminder
+name: Telegram Reminder testing
 
 on:
   workflow_dispatch:   # manual test
