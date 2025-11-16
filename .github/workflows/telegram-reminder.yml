@@ -1,4 +1,4 @@
-name: Telegram Reminder
+name: Telegram Quit Smoking Reminder
 
 on:
   workflow_dispatch:   # manual test
@@ -17,30 +17,77 @@ jobs:
       - name: Determine message
         id: choose
         run: |
-          # Manual run → send ping
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "msg=ping 🚀 Manual test worked!" >> "$GITHUB_OUTPUT"
-            exit 0
+          # Times in UTC (minutes from midnight)
+          T1=$((6*60+20))   # 06:20 UTC -> 08:20 IL
+          T2=$((8*60+0))    # 08:00 UTC -> 10:00 IL
+          T3=$((10*60+20))  # 10:20 UTC -> 12:20 IL
+          T4=$((12*60+0))   # 12:00 UTC -> 14:00 IL
+          T5=$((14*60+0))   # 14:00 UTC -> 16:00 IL
+          T6=$((16*60+0))   # 16:00 UTC -> 18:00 IL
+
+          H=$(date -u +%H)
+          M=$(date -u +%M)
+          NOW=$((10#$H*60 + 10#$M))
+
+          MODE="${{ github.event_name }}"
+
+          # Decide which slot we're targeting
+          SLOT=""
+
+          if [ "$MODE" = "workflow_dispatch" ]; then
+            # Manual run → pick the *next* upcoming slot
+            if   [ "$NOW" -lt "$T1" ]; then SLOT="T1"
+            elif [ "$NOW" -lt "$T2" ]; then SLOT="T2"
+            elif [ "$NOW" -lt "$T3" ]; then SLOT="T3"
+            elif [ "$NOW" -lt "$T4" ]; then SLOT="T4"
+            elif [ "$NOW" -lt "$T5" ]; then SLOT="T5"
+            elif [ "$NOW" -lt "$T6" ]; then SLOT="T6"
+            else SLOT="T1"  # אחרי 18:00 ישראל → מראה את של 08:20 של מחר
+            fi
+          else
+            # Scheduled run → pick based on exact current time
+            if   [ "$NOW" -eq "$T1" ]; then SLOT="T1"
+            elif [ "$NOW" -eq "$T2" ]; then SLOT="T2"
+            elif [ "$NOW" -eq "$T3" ]; then SLOT="T3"
+            elif [ "$NOW" -eq "$T4" ]; then SLOT="T4"
+            elif [ "$NOW" -eq "$T5" ]; then SLOT="T5"
+            elif [ "$NOW" -eq "$T6" ]; then SLOT="T6"
+            else SLOT="FALLBACK"
+            fi
           fi
 
-          # Automatic → choose message by UTC time
-          HOUR=$(date -u +%H)
-          MINUTE=$(date -u +%M)
-
-          if [ "$HOUR:$MINUTE" = "06:20" ]; then
-            MSG="בוקר טוב אמיר ☀️ עוד יום חדש בלי סיגריות. זו התחלה חזקה."
-          elif [ "$HOUR:$MINUTE" = "08:00" ]; then
-            MSG="עשר בבוקר 💪 הגוף שלך נקי יותר ממה שהוא היה מזה שנים."
-          elif [ "$HOUR:$MINUTE" = "10:20" ]; then
-            MSG="צהריים מתקרבים 🌤️ אתה שולט בהרגל — לא ההרגל בך."
-          elif [ "$HOUR:$MINUTE" = "12:00" ]; then
-            MSG="14:00 — הזמן הקלאסי לסיגריה. אבל אתה מוכיח שתבנית ישנה לא מחזיקה אותך."
-          elif [ "$HOUR:$MINUTE" = "14:00" ]; then
-            MSG="16:00 🧠 הגוף מחפש הפסקה, לא סיגריה. אתה שם לב — וזה כל ההבדל."
-          elif [ "$HOUR:$MINUTE" = "16:00" ]; then
-            MSG="18:00 🌙 עוד חצי יום עבר בלי עישון. אתה בתהליך אמיתי — וזה מורגש."
+          # Build the right message
+          if [ "$SLOT" = "T1" ]; then
+            IL_TIME="08:20"
+            BASE_MSG="בוקר טוב אמיר ☀️ עוד יום חדש בלי סיגריות. זו התחלה חזקה."
+          elif [ "$SLOT" = "T2" ]; then
+            IL_TIME="10:00"
+            BASE_MSG="עשר בבוקר 💪 הגוף שלך נקי יותר ממה שהוא היה מזה שנים."
+          elif [ "$SLOT" = "T3" ]; then
+            IL_TIME="12:20"
+            BASE_MSG="צהריים מתקרבים 🌤️ אתה שולט בהרגל — לא ההרגל בך."
+          elif [ "$SLOT" = "T4" ]; then
+            IL_TIME="14:00"
+            BASE_MSG="14:00 — הזמן הקלאסי לסיגריה. אבל אתה מוכיח שתבנית ישנה לא מחזיקה אותך."
+          elif [ "$SLOT" = "T5" ]; then
+            IL_TIME="16:00"
+            BASE_MSG="16:00 🧠 הגוף מחפש הפסקה, לא סיגריה. אתה שם לב — וזה כל ההבדל."
+          elif [ "$SLOT" = "T6" ]; then
+            IL_TIME="18:00"
+            BASE_MSG="18:00 🌙 עוד חצי יום עבר בלי עישון. אתה בתהליך אמיתי — וזה מורגש."
           else
-            MSG="תזכורת ✨ אתה לא מעשן. זה רק הרגל שמתפרק."
+            IL_TIME=""
+            BASE_MSG="תזכורת ✨ אתה לא מעשן. זה רק הרגל שמתפרק."
+          fi
+
+          if [ "$MODE" = "workflow_dispatch" ]; then
+            if [ -n "$IL_TIME" ]; then
+              MSG="(בדיקה ידנית) התזכורת הבאה שלך בשעה ${IL_TIME} ישראל:\n\n${BASE_MSG}"
+            else
+              MSG="(בדיקה ידנית) ${BASE_MSG}"
+            fi
+          else
+            MSG="${BASE_MSG}"
           fi
 
           echo "msg=$MSG" >> "$GITHUB_OUTPUT"
