@@ -1,31 +1,14 @@
-name: Telegram Quit Smoking Reminder
+name: Telegram Test Message
 
 on:
   workflow_dispatch:
-    # Times are in UTC.
-    # 7,10,14,17,20 UTC ≈ 8,11,15,18,21 in Europe/Amsterdam
-    # - cron: "0 7 * * *"
-    # - cron: "0 10 * * *"
-    # - cron: "0 14 * * *"
-    # - cron: "0 17 * * *"
-    # - cron: "0 20 * * *"
-    
 
 jobs:
   send-message:
     runs-on: ubuntu-latest
     steps:
-      - name: Choose message based on time
-        id: choose
-        run: |
-
-            MSG="תזכורת ✨ אתה לא מעשן. זה רק הרגל ישן שמנסה לחזור – ואתה שולט בו, לא להפך."
-
-
-          echo "msg=$MSG" >> "$GITHUB_OUTPUT"
-
       - name: Send Telegram Message
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.CHAT_ID }}" \
-            --data-urlencode "text=${{ steps.choose.outputs.msg }}"
+            -d text="Test message: if you see this, everything works! 🚀"
